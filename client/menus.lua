@@ -1,7 +1,5 @@
-local QBCore = exports['qb-core']:GetCoreObject()
-
 RegisterNetEvent('qw-crypto-mining:client:openMenu', function()
-    QBCore.Functions.TriggerCallback('qw-crypto-mining:server:getPlayerCryptoMiningData', function(result)
+    lib.callback('qw-crypto-mining:server:getPlayerCryptoMiningData', false, function(result)
         if not result then
             if not Config.UsingOxLib then
                 exports['qb-menu']:openMenu({

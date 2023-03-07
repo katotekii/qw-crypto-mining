@@ -43,9 +43,11 @@ function createMenuZone()
     end
 end
 
-RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
-    createMenuZone()
-end)
+-- RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+--     createMenuZone()
+-- end)
+
+-- called now from bridge/framework/client.lua
 
 AddEventHandler('onResourceStart', function(resourceName)
     if GetCurrentResourceName() == resourceName then

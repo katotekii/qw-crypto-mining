@@ -1,14 +1,12 @@
-local QBCore = exports['qb-core']:GetCoreObject()
 local PlayerCryptoCache = {}
 
-QBCore.Functions.CreateCallback('qw-crypto-mining:server:getPlayerCryptoMiningData', function(source, cb)
+lib.callback.register('qw-crypto-mining:server:getPlayerCryptoMiningData', function(source)
     local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
-    local citizenId = Player.PlayerData.citizenid
+    local citizenId = server.GetIdentifier(src)
 
     if PlayerCryptoCache[citizenId] ~= nil then
         if Config.Debug then print('Using cached data for ' .. citizenId) end
-        cb(PlayerCryptoCache[citizenId])
+        return PlayerCryptoCache[citizenId]
     else
         local playerCryptoData = MySQL.query.await('SELECT * FROM player_crypto_mining WHERE citizenid = @citizenid', {
             ['@citizenid'] = citizenId
@@ -19,28 +17,26 @@ QBCore.Functions.CreateCallback('qw-crypto-mining:server:getPlayerCryptoMiningDa
             cryptoData = playerCryptoData[1]
             PlayerCryptoCache[citizenId] = cryptoData
             TriggerClientEvent('QBCore:Notify', src, 'Rig is Starting up!', 'success')
-            cb(cryptoData)
+            return cryptoData
         else
             if Config.Debug then print('No data found for ' .. citizenId) end
-            cb(false)
+            return false
         end
     end
+
+    return false
 end)
 
 RegisterNetEvent('qw-crypto-mining:server:purchaseRig', function() 
-
     local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
-    local citizenId = Player.PlayerData.citizenid
+    local citizenId = server.GetIdentifier(src)
 
     if PlayerCryptoCache[citizenId] ~= nil then
         if Config.Debug then print('Using cached data for ' .. citizenId) end
         TriggerClientEvent('QBCore:Notify', src, 'You already have a mining rig!', 'error')
         return
     else
-        local playerCryptoData = MySQL.query.await('SELECT * FROM player_crypto_mining WHERE citizenid = @citizenid', {
-            ['@citizenid'] = citizenId
-        })
+        local playerCryptoData = MySQL.query.await('SELECT * FROM player_crypto_mining WHERE citizenid = @citizenid', { ['@citizenid'] = citizenId })
 
         if playerCryptoData[1] and playerCryptoData ~= "[]" then
             if Config.Debug then print('Using database data for ' .. citizenId) end
@@ -48,17 +44,14 @@ RegisterNetEvent('qw-crypto-mining:server:purchaseRig', function()
             PlayerCryptoCache[citizenId] = cryptoData
             TriggerClientEvent('QBCore:Notify', src, 'You already have a mining rig!', 'error')
         else
-            if Player.Functions.RemoveMoney('bank', Config.BuyPrice, "purchase-crypto-rig") then -- REMINDER: BANK LETS YOU GO NEGATIVE
+            if server.RemoveMoney(src, 'bank', Config.BuyPrice, 'purchase-crypto-rig') then -- REMINDER: BANK LETS YOU GO NEGATIVE
                 local temp = {}
 
                 for k, v in pairs(Config.CryptoUpgrades) do
                     temp[k] = 1
                 end
 
-                MySQL.query.await('INSERT INTO `player_crypto_mining` (`citizenid`, `rigdata`) VALUES (?, ?)', {
-                    citizenId,
-                    json.encode(temp)
-                })
+                MySQL.query.await('INSERT INTO `player_crypto_mining` (`citizenid`, `rigdata`) VALUES (?, ?)', { citizenId, json.encode(temp) })
             else
                 TriggerClientEvent('QBCore:Notify', src, 'You do not have enough money to purchase a Rig right now!', 'error')
             end
@@ -67,13 +60,12 @@ RegisterNetEvent('qw-crypto-mining:server:purchaseRig', function()
 end)
 
 RegisterNetEvent('qw-crypto-mining:server:upgradeComponent', function(component, componentIndex) 
-
     local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
+    local Player = server.GetPlayer(src)
     
     if not Player then return end
     
-    local citizenId = Player.PlayerData.citizenid
+    local citizenId = server.GetIdentifier(src)
 
     if not Config.UsingOxLib then
         UpgradeComponent(component.choosenComponent, component.choosenIndex, citizenId, src)
@@ -84,11 +76,11 @@ end)
 
 RegisterNetEvent('qw-crypto-mining:server:stopRig', function() 
     local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
+    local Player = server.GetPlayer(src)
     
     if not Player then return end
 
-    local citizenId = Player.PlayerData.citizenid
+    local citizenId = server.GetIdentifier(src)
 
     PlayerCryptoCache[citizenId] = nil
 
@@ -96,13 +88,12 @@ RegisterNetEvent('qw-crypto-mining:server:stopRig', function()
 end)
 
 RegisterNetEvent('qw-crypto-mining:server:sellRig', function() 
-
     local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
+    local Player = server.GetPlayer(src)
     
     if not Player then return end
     
-    local citizenId = Player.PlayerData.citizenid
+    local citizenId = server.GetIdentifier(src)
 
     local currentRigData = json.decode(PlayerCryptoCache[citizenId].rigdata)
 
@@ -112,7 +103,7 @@ RegisterNetEvent('qw-crypto-mining:server:sellRig', function()
         totalValue = totalValue + Config.CryptoUpgrades[k][v].sellPrice
     end
 
-    Player.Functions.AddMoney('bank', totalValue, "sold-crypto-rig")
+    server.AddMoney(src, 'bank', totalValue, 'sold-crypto-rig')
 
     MySQL.query.await('DELETE FROM `player_crypto_mining` WHERE citizenid = @citizenid', {['@citizenid'] = citizenId})
 
@@ -135,19 +126,20 @@ end)
 -- Functions
 
 function UpgradeComponent(component, componentIndex, citizenId, src)
-        local Player = QBCore.Functions.GetPlayerByCitizenId(citizenId)
-        local currentRigData = json.decode(PlayerCryptoCache[citizenId].rigdata)
-        currentRigData[component] = componentIndex
-        PlayerCryptoCache[citizenId].rigdata = json.encode(currentRigData)
-        if Config.Debug then print('Updating cache for player ' .. citizenId) end
+    local currentRigData = json.decode(PlayerCryptoCache[citizenId].rigdata)
 
-        if Player.Functions.RemoveMoney('bank', Config.CryptoUpgrades[component][componentIndex].price, "purchase-crypto-upgrade") then
-            MySQL.query.await('UPDATE `player_crypto_mining` SET `rigdata` = @rigdata WHERE citizenid = @citizenid', {['@rigdata'] = json.encode(currentRigData), ['@citizenid'] = citizenId})
+    currentRigData[component] = componentIndex
+    PlayerCryptoCache[citizenId].rigdata = json.encode(currentRigData)
     
-            TriggerClientEvent('QBCore:Notify', src, 'You have upgraded your ' .. component .. ' to level ' .. componentIndex, 'success')
-        else
-            TriggerClientEvent('QBCore:Notify', src, 'You do not have enough money to purchase that upgrade!', 'error')
-        end
+    if Config.Debug then print('Updating cache for player ' .. citizenId) end
+
+    if server.RemoveMoney(src, 'bank', Config.CryptoUpgrades[component][componentIndex].price, 'purchase-crypto-upgrade') then
+        MySQL.query.await('UPDATE `player_crypto_mining` SET `rigdata` = @rigdata WHERE citizenid = @citizenid', {['@rigdata'] = json.encode(currentRigData), ['@citizenid'] = citizenId})
+
+        TriggerClientEvent('QBCore:Notify', src, 'You have upgraded your ' .. component .. ' to level ' .. componentIndex, 'success')
+    else
+        TriggerClientEvent('QBCore:Notify', src, 'You do not have enough money to purchase that upgrade!', 'error')
+    end
 end
 
 function Payout()
@@ -163,9 +155,20 @@ function Payout()
 
         totalPayout = totalPayout + totalValue
 
-        local Player = QBCore.Functions.GetPlayerByCitizenId(k)
-        Player.Functions.AddMoney('crypto', totalValue, "crypto-payout")
-        TriggerClientEvent('QBCore:Notify', Player.PlayerData.source, 'You have mined '..totalPayout..' crypto while running your Rig', 'primary')
+        local Player = server.GetPlayerByCitizenId(k)
+        local src
+
+        -- since esx doesn't have crypto as account money we put here at bank
+        if server.Framework == 'esx' then 
+            src = Player.source
+            server.AddMoney(src, 'bank', totalValue, 'crypto-payout')
+        end
+        if server.Framework == 'qb' then 
+            src = Player.PlayerData.source
+            server.AddMoney(src, 'crypto', totalValue, 'crypto-payout')
+        end
+
+        TriggerClientEvent('QBCore:Notify', src, 'You have mined '..totalPayout..' crypto while running your Rig', 'primary')
     end
 end
 
@@ -184,12 +187,27 @@ function ChargeForPower()
         totalAmountToCharge = totalAmountToCharge + totalValue
 
         local Player = QBCore.Functions.GetPlayerByCitizenId(k)
-        
-        if Player.Functions.RemoveMoney('bank', totalAmountToCharge, "crypto-power-costs") then
-            TriggerClientEvent('QBCore:Notify', Player.PlayerData.source, 'You were charged $'..totalAmountToCharge..' for your mining equipment', 'primary')
-        else
-            TriggerClientEvent('QBCore:Notify', Player.PlayerData.source, 'You do not have enough money to pay for your mining equipment! We are turning your rig off now!', 'error')
-            PlayerCryptoCache[k] = nil
+
+        local Player = server.GetPlayerByCitizenId(k)
+        local src
+
+        if server.Framework == 'esx' then 
+            src = Player.source
+            if server.RemoveMoney(src, 'bank', totalAmountToCharge, 'crypto-power-costs') then
+                TriggerClientEvent('QBCore:Notify', src, 'You were charged $'..totalAmountToCharge..' for your mining equipment', 'primary')
+            else
+                TriggerClientEvent('QBCore:Notify', src, 'You do not have enough money to pay for your mining equipment! We are turning your rig off now!', 'error')
+                PlayerCryptoCache[k] = nil
+            end
+        end
+        if server.Framework == 'qb' then 
+            src = Player.PlayerData.source
+            if server.RemoveMoney(src, 'bank', totalAmountToCharge, 'crypto-power-costs') then
+                TriggerClientEvent('QBCore:Notify', src, 'You were charged $'..totalAmountToCharge..' for your mining equipment', 'primary')
+            else
+                TriggerClientEvent('QBCore:Notify', src, 'You do not have enough money to pay for your mining equipment! We are turning your rig off now!', 'error')
+                PlayerCryptoCache[k] = nil
+            end
         end
     end
 
@@ -217,17 +235,13 @@ end)
 
 AddEventHandler('playerDropped', function()
     local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
-    
-    if not Player then return end
-    
-    local citizenId = Player.PlayerData.citizenid
+    local citizenId = server.GetIdentifier(src)
 
     TriggerEvent('qw-crypto-mining:server:removeFromCache', citizenId)
 end)
 
 AddEventHandler('onResourceStart', function(resourceName)
-    if GetCurrentResourceName() == resourceName then
+    if cache.resource == resourceName then
         TriggerEvent('qw-crypto-mining:server:startPayoutClock')
         TriggerEvent('qw-crypto-mining:server:startPowerUsageClock')
     end
