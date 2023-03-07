@@ -1,6 +1,3 @@
-local QBCore = exports['qb-core']:GetCoreObject()
-
-
 function createMenuZone()
     local menuZoneName = 'crypto_mining_menu_zone'
     
