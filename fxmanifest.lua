@@ -8,11 +8,13 @@ author 'qw-scripts'
 version '0.1.0'
 
 client_scripts {
+    'bridge/init.lua',
     'bridge/**/*',
     'client/**/*'
 }
 
-server_scripts { 
+server_scripts {
+    'bridge/init.lua', 
     'bridge/**/*',
     'server/**/*',
     '@oxmysql/lib/MySQL.lua' 

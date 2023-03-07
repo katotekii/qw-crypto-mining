@@ -1,7 +1,6 @@
 if GetResourceState('qb_core') ~= 'started' then return end
 
 server = {}
-server.Framework = 'qb'
 local QBCore = exports.qb_core:GetCoreObject()
 
 

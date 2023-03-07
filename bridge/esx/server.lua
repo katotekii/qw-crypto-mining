@@ -1,7 +1,6 @@
 if GetResourceState('es_extended') ~= 'started' then return end
 
 server = {}
-server.Framework = 'esx'
 local ESX = exports['es_extended']:getSharedObject()
 
 

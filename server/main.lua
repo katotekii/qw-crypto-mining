@@ -157,11 +157,11 @@ function Payout()
         local src
 
         -- since esx doesn't have crypto as account money we put here at bank
-        if server.Framework == 'esx' then 
+        if shared.Framework == 'esx' then 
             src = Player.source
             server.AddMoney(src, 'bank', totalValue, 'crypto-payout')
         end
-        if server.Framework == 'qb' then 
+        if shared.Framework == 'qb' then 
             src = Player.PlayerData.source
             server.AddMoney(src, 'crypto', totalValue, 'crypto-payout')
         end
@@ -187,7 +187,7 @@ function ChargeForPower()
         local Player = server.GetPlayerByCitizenId(k)
         local src
 
-        if server.Framework == 'esx' then 
+        if shared.Framework == 'esx' then 
             src = Player.source
             if server.RemoveMoney(src, 'bank', totalAmountToCharge, 'crypto-power-costs') then
                 TriggerClientEvent('ox_lib:notify', src, { type = 'inform', description = ('You were charged %s $ for your mining equipment'):format(totalAmountToCharge) })
@@ -196,7 +196,7 @@ function ChargeForPower()
                 PlayerCryptoCache[k] = nil
             end
         end
-        if server.Framework == 'qb' then 
+        if shared.Framework == 'qb' then 
             src = Player.PlayerData.source
             if server.RemoveMoney(src, 'bank', totalAmountToCharge, 'crypto-power-costs') then
                 TriggerClientEvent('ox_lib:notify', src, { type = 'inform', description = ('You were charged %s $ for your mining equipment'):format(totalAmountToCharge) })
@@ -206,7 +206,6 @@ function ChargeForPower()
             end
         end
     end
-
 end
 
 RegisterNetEvent("qw-crypto-mining:server:startPayoutClock", function()

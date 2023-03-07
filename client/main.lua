@@ -1,4 +1,4 @@
-function createMenuZone()
+local function createMenuZone()
     local menuZoneName = 'crypto_mining_menu_zone'
     
     if not Config.UsingOxTarget then
@@ -38,6 +38,19 @@ function createMenuZone()
             }
         })
     end
+end
+
+if shared.Framework == 'esx' then
+    RegisterNetEvent('esx:playerLoaded')
+    AddEventHandler('esx:playerLoaded', function(xPlayer)
+        createMenuZone()
+    end)
+end
+
+if shared.Framework == 'qb' then
+    RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+        createMenuZone()
+    end)
 end
 
 -- RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
