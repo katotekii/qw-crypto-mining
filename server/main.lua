@@ -16,7 +16,7 @@ lib.callback.register('qw-crypto-mining:server:getPlayerCryptoMiningData', funct
             if Config.Debug then print('Using database data for ' .. citizenId) end
             cryptoData = playerCryptoData[1]
             PlayerCryptoCache[citizenId] = cryptoData
-            TriggerClientEvent('QBCore:Notify', src, 'Rig is Starting up!', 'success')
+            TriggerClientEvent('ox_lib:notify', src, { type = 'inform', description = 'Rig is Starting up' })
             return cryptoData
         else
             if Config.Debug then print('No data found for ' .. citizenId) end
@@ -33,7 +33,7 @@ RegisterNetEvent('qw-crypto-mining:server:purchaseRig', function()
 
     if PlayerCryptoCache[citizenId] ~= nil then
         if Config.Debug then print('Using cached data for ' .. citizenId) end
-        TriggerClientEvent('QBCore:Notify', src, 'You already have a mining rig!', 'error')
+        TriggerClientEvent('ox_lib:notify', src, { type = 'error', description = 'You already have a mining rig!' })
         return
     else
         local playerCryptoData = MySQL.query.await('SELECT * FROM player_crypto_mining WHERE citizenid = @citizenid', { ['@citizenid'] = citizenId })
@@ -42,7 +42,7 @@ RegisterNetEvent('qw-crypto-mining:server:purchaseRig', function()
             if Config.Debug then print('Using database data for ' .. citizenId) end
             cryptoData = playerCryptoData[1]
             PlayerCryptoCache[citizenId] = cryptoData
-            TriggerClientEvent('QBCore:Notify', src, 'You already have a mining rig!', 'error')
+            TriggerClientEvent('ox_lib:notify', src, { type = 'error', description = 'You already have a mining rig!' })
         else
             if server.RemoveMoney(src, 'bank', Config.BuyPrice, 'purchase-crypto-rig') then -- REMINDER: BANK LETS YOU GO NEGATIVE
                 local temp = {}
@@ -53,7 +53,7 @@ RegisterNetEvent('qw-crypto-mining:server:purchaseRig', function()
 
                 MySQL.query.await('INSERT INTO `player_crypto_mining` (`citizenid`, `rigdata`) VALUES (?, ?)', { citizenId, json.encode(temp) })
             else
-                TriggerClientEvent('QBCore:Notify', src, 'You do not have enough money to purchase a Rig right now!', 'error')
+                TriggerClientEvent('ox_lib:notify', src, { type = 'error', description = 'You do not have enough money to purchase a Rig right now!' })
             end
         end
     end
@@ -84,7 +84,7 @@ RegisterNetEvent('qw-crypto-mining:server:stopRig', function()
 
     PlayerCryptoCache[citizenId] = nil
 
-    TriggerClientEvent('QBCore:Notify', src, 'You have stopped your mining rig!', 'success')
+    TriggerClientEvent('ox_lib:notify', src, { type = 'inform', description = 'You have stopped your mining rig!' })
 end)
 
 RegisterNetEvent('qw-crypto-mining:server:sellRig', function() 
@@ -108,8 +108,7 @@ RegisterNetEvent('qw-crypto-mining:server:sellRig', function()
     MySQL.query.await('DELETE FROM `player_crypto_mining` WHERE citizenid = @citizenid', {['@citizenid'] = citizenId})
 
     PlayerCryptoCache[citizenId] = nil
-
-    TriggerClientEvent('QBCore:Notify', src, 'You have sold your mining rig for $' .. totalValue, 'success')
+    TriggerClientEvent('ox_lib:notify', src, { type = 'inform', description = ('You have sold your mining rig for $ %s'):format(totalValue) })
 end)
 
 RegisterNetEvent('qw-crypto-mining:server:removeFromCache', function(citizenId)
@@ -135,10 +134,9 @@ function UpgradeComponent(component, componentIndex, citizenId, src)
 
     if server.RemoveMoney(src, 'bank', Config.CryptoUpgrades[component][componentIndex].price, 'purchase-crypto-upgrade') then
         MySQL.query.await('UPDATE `player_crypto_mining` SET `rigdata` = @rigdata WHERE citizenid = @citizenid', {['@rigdata'] = json.encode(currentRigData), ['@citizenid'] = citizenId})
-
-        TriggerClientEvent('QBCore:Notify', src, 'You have upgraded your ' .. component .. ' to level ' .. componentIndex, 'success')
+        TriggerClientEvent('ox_lib:notify', src, { type = 'inform', description = ('You have upgraded your %s to level %s'):format(component, componentIndex) })
     else
-        TriggerClientEvent('QBCore:Notify', src, 'You do not have enough money to purchase that upgrade!', 'error')
+        TriggerClientEvent('ox_lib:notify', src, { type = 'error', description = 'You do not have enough money to purchase that upgrade!' })
     end
 end
 
@@ -168,7 +166,7 @@ function Payout()
             server.AddMoney(src, 'crypto', totalValue, 'crypto-payout')
         end
 
-        TriggerClientEvent('QBCore:Notify', src, 'You have mined '..totalPayout..' crypto while running your Rig', 'primary')
+        TriggerClientEvent('ox_lib:notify', src, { type = 'inform', description = ('You have mined %s crypto while running your Rig'):format(totalPayout) })
     end
 end
 
@@ -194,18 +192,18 @@ function ChargeForPower()
         if server.Framework == 'esx' then 
             src = Player.source
             if server.RemoveMoney(src, 'bank', totalAmountToCharge, 'crypto-power-costs') then
-                TriggerClientEvent('QBCore:Notify', src, 'You were charged $'..totalAmountToCharge..' for your mining equipment', 'primary')
+                TriggerClientEvent('ox_lib:notify', src, { type = 'inform', description = ('You were charged %s $ for your mining equipment'):format(totalAmountToCharge) })
             else
-                TriggerClientEvent('QBCore:Notify', src, 'You do not have enough money to pay for your mining equipment! We are turning your rig off now!', 'error')
+                TriggerClientEvent('ox_lib:notify', src, { type = 'error', description = 'You do not have enough money to pay for your mining equipment! We are turning your rig off now!' })
                 PlayerCryptoCache[k] = nil
             end
         end
         if server.Framework == 'qb' then 
             src = Player.PlayerData.source
             if server.RemoveMoney(src, 'bank', totalAmountToCharge, 'crypto-power-costs') then
-                TriggerClientEvent('QBCore:Notify', src, 'You were charged $'..totalAmountToCharge..' for your mining equipment', 'primary')
+                TriggerClientEvent('ox_lib:notify', src, { type = 'inform', description = ('You were charged %s $ for your mining equipment'):format(totalAmountToCharge) })
             else
-                TriggerClientEvent('QBCore:Notify', src, 'You do not have enough money to pay for your mining equipment! We are turning your rig off now!', 'error')
+                TriggerClientEvent('ox_lib:notify', src, { type = 'error', description = 'You do not have enough money to pay for your mining equipment! We are turning your rig off now!' })
                 PlayerCryptoCache[k] = nil
             end
         end
