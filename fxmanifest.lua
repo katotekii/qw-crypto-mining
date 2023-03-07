@@ -18,4 +18,4 @@ server_scripts {
     '@oxmysql/lib/MySQL.lua' 
 }
 
-shared_scripts { 'shared/**/*', '@ox_lib/init.lua' }
+shared_scripts { '@ox_lib/init.lua', 'shared/**/*' }
