@@ -8,51 +8,52 @@ function generateViewRigMenu(data)
         currentTotalPowerUsage = currentTotalPowerUsage + Config.CryptoUpgrades[k][v].powerUsage
     end
 
-    local qbMenu = {
-        {
-            header = 'Current Hash Rate',
-            txt = 'Hash Rate: ' .. currentTotalHashRate * Config.HashRateMultiplier,
-            icon = 'fa-solid fa-gear',
-            disabled = true
-        },
-        {
-            header = 'Current Power Usage',
-            txt = 'Power Usage: ' .. currentTotalPowerUsage * Config.PowerUsageMultiplier,
-            icon = 'fa-solid fa-gear',
-            disabled = true
-        },
-    }
-    local oxMenu = {
-        {
-            title = 'Current Hash Rate',
-            description = 'Hash Rate: ' .. currentTotalHashRate * Config.HashRateMultiplier,
-            icon = 'fa-solid fa-gear',
-        },
-        {
-            title = 'Current Power Usage',
-            description = 'Power Usage: ' .. currentTotalPowerUsage * Config.PowerUsageMultiplier,
-            icon = 'fa-solid fa-gear',
-        },
-    }
+    if not Config.UsingOxLib then
+        local qbMenu = {
+            {
+                header = 'Current Hash Rate',
+                txt = 'Hash Rate: ' .. currentTotalHashRate * Config.HashRateMultiplier,
+                icon = 'fa-solid fa-gear',
+                disabled = true
+            },
+            {
+                header = 'Current Power Usage',
+                txt = 'Power Usage: ' .. currentTotalPowerUsage * Config.PowerUsageMultiplier,
+                icon = 'fa-solid fa-gear',
+                disabled = true
+            },
+        }
 
-    for k, v in pairs(rigUpgradeData) do
-        if not Config.UsingOxLib then
+        for k, v in pairs(rigUpgradeData) do
             qbMenu[#qbMenu + 1] = {
                 header = k..': '..Config.CryptoUpgrades[k][v].name,
                 txt = 'Hash Rate: ' .. Config.CryptoUpgrades[k][v].hashRate .. ' | Power Usage: ' .. Config.CryptoUpgrades[k][v].powerUsage,
                 disabled = true
             }
-        else
+        end
+
+        return qbMenu
+    else
+        local oxMenu = {
+            {
+                title = 'Current Hash Rate',
+                description = 'Hash Rate: ' .. currentTotalHashRate * Config.HashRateMultiplier,
+                icon = 'fa-solid fa-gear',
+            },
+            {
+                title = 'Current Power Usage',
+                description = 'Power Usage: ' .. currentTotalPowerUsage * Config.PowerUsageMultiplier,
+                icon = 'fa-solid fa-gear',
+            },
+        }
+
+        for k, v in pairs(rigUpgradeData) do
             oxMenu[#oxMenu + 1] = {
                 title = k..': '..Config.CryptoUpgrades[k][v].name,
                 description = 'Hash Rate: ' .. Config.CryptoUpgrades[k][v].hashRate .. ' | Power Usage: ' .. Config.CryptoUpgrades[k][v].powerUsage,
             }
         end
-    end
 
-    if not Config.UsingOxLib then
-        return qbMenu
-    else
         return oxMenu
     end
 end

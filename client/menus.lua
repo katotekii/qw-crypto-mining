@@ -139,7 +139,8 @@ RegisterNetEvent('qw-crypto-mining:client:openViewRig', function(rigData)
         lib.registerContext({
             id = 'view_mining_rig_menu',
             title = 'View Rig',
-            options = rigUpgradeMenu
+            options = rigUpgradeMenu,
+            menu = 'crypto_mining_menu'
         })
         lib.showContext('view_mining_rig_menu')
     end
@@ -156,7 +157,8 @@ RegisterNetEvent('qw-crypto-mining:client:openUpgradeMenu', function(rigData)
         lib.registerContext({
             id = 'upgrade_mining_rig_menu',
             title = 'Upgrade Rig',
-            options = rigUpgradeMenu
+            options = rigUpgradeMenu,
+            menu = 'crypto_mining_menu'
         })
         lib.showContext('upgrade_mining_rig_menu')
     end
@@ -173,7 +175,8 @@ RegisterNetEvent('qw-crypto-mining:client:openUpgradeMenuForComponent', function
         lib.registerContext({
             id = 'upgrade_component_mining_rig_menu',
             title = 'Upgrade Component',
-            options = rigComponentUpgradeMenu
+            options = rigComponentUpgradeMenu,
+            menu = 'upgrade_mining_rig_menu'
         })
         lib.showContext('upgrade_component_mining_rig_menu')
     end

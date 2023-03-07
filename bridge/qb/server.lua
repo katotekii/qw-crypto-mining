@@ -40,6 +40,13 @@ function server.RemoveMoney(src, type, money, description)
     local Player = QBCore.Functions.GetPlayer(src)
 
     if Player then
-        Player.Functions.RemoveMoney(type, money, description)
+        local balance = Player.PlayerData.money['bank']
+
+        if balance >= money then
+            Player.Functions.RemoveMoney(type, money, description)
+            return true
+        end
     end
+
+    return false
 end
