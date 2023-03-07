@@ -184,8 +184,6 @@ function ChargeForPower()
 
         totalAmountToCharge = totalAmountToCharge + totalValue
 
-        local Player = QBCore.Functions.GetPlayerByCitizenId(k)
-
         local Player = server.GetPlayerByCitizenId(k)
         local src
 

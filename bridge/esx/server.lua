@@ -43,6 +43,13 @@ function server.RemoveMoney(src, type, money, description)
     local xPlayer = ESX.GetPlayerFromId(src)
 
     if xPlayer then
-        xPlayer.removeAccountMoney(type, money)
+        local balance = xPlayer.getAccount(type)
+        
+        if balance.money >= money then
+            xPlayer.removeAccountMoney(type, money)
+            return true
+        end
     end
+
+    return false
 end
